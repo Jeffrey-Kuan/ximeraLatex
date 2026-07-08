@@ -65,15 +65,51 @@
 
 %</classXimera>
 %    \end{macrocode}
-% On the web, these foldable elements could be HTML5 details and summary.
+% On the web, foldable is a native HTML5 disclosure widget: |<details open>|
+% (foldables start expanded, matching the historical chevron-button behavior)
+% whose |<summary>| is the leading |\unfoldable| content, so the teaser stays
+% visible when the reader folds the rest away. Native details/summary gives
+% keyboard operability and expanded/collapsed screen-reader announcements
+% with no JavaScript at all. The class is "foldable-details" rather than
+% "foldable" on purpose: the legacy frontend attaches its jQuery folding
+% logic (chevron button, children().hide()) to every ".foldable" element,
+% which would fight the native widget and hide the summary.
 %    \begin{macrocode}
 %<*htXimera>
-\renewenvironment{foldable}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div id="foldable\arabic{identification}" class="foldable">}}{\HCode{</div>}\IgnoreIndent}
+\newif\ifxm@in@foldable
+\newif\ifxm@foldable@fresh
+\renewenvironment{foldable}{%
+  \stepcounter{identification}%
+  \ifvmode \IgnorePar\fi \EndP%
+  \HCode{<details open="open" id="foldable\arabic{identification}" class="foldable-details">\Hnewline}%
+  \xm@in@foldabletrue
+  \global\xm@foldable@freshtrue
+}{%
+  \global\xm@foldable@freshfalse
+  \ifvmode\IgnorePar\fi\EndP\HCode{</details>}\IgnoreIndent
+}
 
 \ifdefined\xmNotExpandableAsAccordion
 \renewenvironment{expandable}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div data-original="expandable" id="foldable\arabic{identification}" class="foldable">}}{\HCode{</div>}\IgnoreIndent}
 \fi
 
-\renewcommand{\unfoldable}[1]{\HCode{<span class="unfoldable">}#1\HCode{</span>}}
+% The first \unfoldable at the start of a foldable becomes the <summary>.
+% HTML allows only one summary per details, so any later \unfoldable in the
+% same foldable cannot stay visible when folded; it degrades to a plain
+% inline span and warns the author. Outside a foldable, \unfoldable remains
+% a plain span as before.
+\renewcommand{\unfoldable}[1]{%
+  \ifxm@in@foldable
+    \ifxm@foldable@fresh
+      \global\xm@foldable@freshfalse
+      \ifvmode \IgnorePar\fi \EndP%
+      \HCode{<summary class="unfoldable">}#1\HCode{</summary>\Hnewline}%
+    \else
+      \PackageWarning{ximera}{Only the first \string\unfoldable\space at the start of a foldable stays visible when folded (it becomes the summary); this one will fold away with the rest of the content}%
+      \HCode{<span class="unfoldable">}#1\HCode{</span>}%
+    \fi
+  \else
+    \HCode{<span class="unfoldable">}#1\HCode{</span>}%
+  \fi}
 %</htXimera>
 %    \end{macrocode}
