@@ -56,3 +56,7 @@
 \addtranslation{French}{Solution}{Solution}% Used in solution.dtx
 
 
+
+\addtranslation{French}{Footnote}{Note de bas de page}% Used in footnotes.dtx (aria-label)
+
+\addtranslation{French}{expandable}{Détails}% Fallback title for untitled expandables/accordion-items (accordion.dtx)

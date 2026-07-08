@@ -55,3 +55,7 @@
 \addtranslation{Dutch}{warning}{Waarschuwing}% Used in theorems.dtx
 
 \addtranslation{Dutch}{Solution}{Oplossing}% Used in solution.dtx
+
+\addtranslation{Dutch}{Footnote}{Voetnoot}% Used in footnotes.dtx (aria-label)
+
+\addtranslation{Dutch}{expandable}{Details}% Fallback title for untitled expandables/accordion-items (accordion.dtx)

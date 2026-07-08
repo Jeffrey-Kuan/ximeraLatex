@@ -54,3 +54,6 @@
 \addtranslation{Brazil}{warning}{Aviso}% Used in theorems.dtx
 
 \addtranslation{Brazil}{Solution}{Solução}% Used in solution.dtx
+\addtranslation{Brazil}{Footnote}{Nota de rodapé}% Used in footnotes.dtx (aria-label)
+
+\addtranslation{Brazil}{expandable}{Detalhes}% Fallback title for untitled expandables/accordion-items (accordion.dtx)
