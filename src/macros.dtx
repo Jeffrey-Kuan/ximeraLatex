@@ -9,6 +9,42 @@
 %    \begin{macrocode}
 %<*classXimera>
 \let\prelim\lim
-\renewcommand{\lim}{\displaystyle\prelim} 
+\renewcommand{\lim}{\displaystyle\prelim}
 %</classXimera>
+%    \end{macrocode}
+% \subsubsection{Heading levels on the web}
+% Machinery for emitting HTML headings whose level matches the surrounding
+% document outline, so that heading-based navigation (screen readers) sees no
+% skipped levels. tex4ht emits |\section| as |<h3>|, |\subsection| as |<h4>|,
+% |\subsubsection| as |<h5>|; content directly under the (platform-rendered)
+% activity title sits at level 3. |\xmheadlevel| computes the level for a
+% heading emitted at the current position: 3 plus one per sectioning level
+% already entered, plus |xmHeadOffset|. Any environment that emits its own
+% heading and can contain further heading-emitting content (theorem-like
+% environments, accordion items, expandables, hints) must step |xmHeadOffset|
+% for the duration of its body so nested headings land one level deeper.
+% Capped at 6 since HTML has no h7.
+%    \begin{macrocode}
+%<*htXimera>
+\newcounter{xmHeadOffset}
+% Sectioning depth is tracked with hooks rather than by inspecting the
+% section/subsection/subsubsection counters: ximera.cls sets secnumdepth to 2
+% (or -2 in some modes), so those counters do not reliably step, and starred
+% sectioning commands never step them. The hooks fire for starred forms too.
+\newcounter{xmSecDepth}
+\AddToHook{cmd/section/before}{\setcounter{xmSecDepth}{1}}
+\AddToHook{cmd/subsection/before}{\setcounter{xmSecDepth}{2}}
+\AddToHook{cmd/subsubsection/before}{\setcounter{xmSecDepth}{3}}
+\newcommand{\xmheadlevelraw}{\numexpr 3
+  +\value{xmSecDepth}
+  +\value{xmHeadOffset}\relax}
+% Clamped to [2,6]: HTML has no h7, so arbitrarily deep nesting saturates at
+% h6; the floor guards against a manually tampered/unbalanced xmHeadOffset
+% ever producing h1 (reserved for the page title) or an illegal tag like h0.
+\newcommand{\xmheadlevel}{\ifnum\xmheadlevelraw>6 6\else\ifnum\xmheadlevelraw<2 2\else\the\xmheadlevelraw\fi\fi}
+% Visually-hidden inline content: readable by assistive technology, invisible
+% on screen. Used to give otherwise-empty headings (e.g. hint bars) an
+% accessible name without changing their visual appearance.
+\newcommand{\xmSrOnly}[1]{\HCode{<span style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;">}#1\HCode{</span>}}
+%</htXimera>
 %    \end{macrocode}

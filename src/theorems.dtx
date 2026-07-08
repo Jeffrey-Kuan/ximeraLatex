@@ -1,13 +1,24 @@
 % \subsubsection{Theorem and theorem-like environments}
-% On the web, a theorem is emitted as a special |<div>|.
+% On the web, a theorem is emitted as a |<div>| containing a |<section>| whose
+% heading level matches the surrounding document outline (see |\xmheadlevel|
+% in macros.dtx). The offset counter is stepped for the body so that any
+% heading-emitting content nested inside (accordions, expandables, hints,
+% further theorem-like environments) lands one level deeper.
 %    \begin{macrocode}
 %<*htXimera>
+\newcommand{\thmheadlevel}{\xmheadlevel}% name retained from the earlier fixed-level implementation; now delegates to the shared, nesting-aware \xmheadlevel
 \newcommand{\ConfigureTheoremEnv}[1]{%
 \renewenvironment{#1}[1][]{\refstepcounter{problem}%
 \ifthenelse{\equal{##1}{}}{}{%
-  \HCode{<span class="theorem-like-title">}##1\HCode{</span>}%
+  \HCode{<span class="theorem-like problem-environment">}##1\HCode{</span>}%
 }}{}
-\ConfigureEnv{#1}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div class="theorem-like problem-environment #1" id="problem\arabic{identification}" titletext=" \GetTranslation{#1}">}}{\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\IgnoreIndent}{}{}%
+\ConfigureEnv{#1}
+  {\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP
+   \HCode{<div class="theorem-like problem-environment" id="problem\arabic{identification}"><section>\Hnewline<h\xmheadlevel>}\GetTranslation{#1}\HCode{</h\xmheadlevel>}%
+   \stepcounter{xmHeadOffset}}
+  {\addtocounter{xmHeadOffset}{-1}%
+   \ifvmode\IgnorePar\fi\EndP\HCode{</section></div>}\IgnoreIndent}
+  {}{}%
 }
 %</htXimera>
 %<classXimera>\theoremstyle{definition} % No italic (because this makes also text in TikZ italic !!!)

@@ -38,15 +38,25 @@
 \renewenvironment{accordion}{\ifvmode \IgnorePar\fi \EndP\HCode{<div class="accordion">}
 }{\HCode{</div>}\IgnoreIndent}
 
-\renewenvironment{accordion-item}[1][]{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<h3>}#1\HCode{</h3><div id="accordion-item\arabic{identification}" class="accordion-item">}
-}{\HCode{</div>}\IgnoreIndent}
+% The header level is computed by \xmheadlevel (macros.dtx) so the document
+% outline has no skipped levels; the class "accordion-header" gives the
+% frontend a level-independent hook (it can no longer assume <h3>). The
+% offset counter is stepped for the panel body so nested headings land one
+% level deeper.
+% An empty/omitted title would leave an unnamed heading for assistive
+% technology, so it falls back to a visually-hidden localized "Details".
+\renewenvironment{accordion-item}[1][]{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<h\xmheadlevel\space class="accordion-header">}\if\relax\detokenize{#1}\relax\xmSrOnly{\GetTranslation{expandable}}\else#1\fi\HCode{</h\xmheadlevel><div id="accordion-item\arabic{identification}" class="accordion-item">}\stepcounter{xmHeadOffset}
+}{\addtocounter{xmHeadOffset}{-1}\HCode{</div>}\IgnoreIndent}
 
 
 \ifdefined\xmNotHintAsExpandable\else
 %\let\hint\relax
 %\let\endhint\relax
+% The hint header gets a visually-hidden localized "Hint" label so it is not
+% an empty heading for assistive technology; visually it stays exactly as the
+% platform CSS paints it.
 \RenewEnviron{hint}{%
- \begin{expandable}{xmhint}{}%
+ \begin{expandable}{xmhint}{\xmSrOnly{\GetTranslation{hint}}}%
    \BODY%
  \end{expandable}%
 }
@@ -60,10 +70,14 @@
   \stepcounter{identification}%
   \ifvmode \IgnorePar\fi \EndP%
   \HCode{<div class="accordion">\Hnewline}%
-  \HCode{<h3 class="#1">}#2\HCode{</h3>\Hnewline}%
-  \HCode{<div id="accordion-item\arabic{identification}" class="accordion-item #1-content">\Hnewline}
+  \HCode{<h\xmheadlevel\space class="accordion-header #1">}%
+  \if\relax\detokenize{#2}\relax\xmSrOnly{\GetTranslation{expandable}}\else#2\fi
+  \HCode{</h\xmheadlevel>\Hnewline}%
+  \HCode{<div id="accordion-item\arabic{identification}" class="accordion-item #1-content">\Hnewline}%
+  \stepcounter{xmHeadOffset}%
 }%
 {%
+  \addtocounter{xmHeadOffset}{-1}%
   \HCode{</div>\Hnewline</div>\Hnewline}\IgnoreIndent
 }
 \fi
