@@ -100,12 +100,29 @@
 \ifdefined\xmNotHintAsExpandable
   \ConfigureQuestionEnv{hint}{hint} % 2024: hint is no longer a 'question-environment'.
 \fi
+\newcounter{xmHeadOffset}
+\newcounter{xmSecDepth}
+\AddToHook{cmd/section/before}{\setcounter{xmSecDepth}{1}}
+\AddToHook{cmd/subsection/before}{\setcounter{xmSecDepth}{2}}
+\AddToHook{cmd/subsubsection/before}{\setcounter{xmSecDepth}{3}}
+\newcommand{\xmheadlevelraw}{\numexpr 3
+  +\value{xmSecDepth}
+  +\value{xmHeadOffset}\relax}
+\newcommand{\xmheadlevel}{\ifnum\xmheadlevelraw>6 6\else\ifnum\xmheadlevelraw<2 2\else\the\xmheadlevelraw\fi\fi}
+\newcommand{\xmSrOnly}[1]{\HCode{<span style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;">}#1\HCode{</span>}}
+\newcommand{\thmheadlevel}{\xmheadlevel}% name retained from the earlier fixed-level implementation; now delegates to the shared, nesting-aware \xmheadlevel
 \newcommand{\ConfigureTheoremEnv}[1]{%
 \renewenvironment{#1}[1][]{\refstepcounter{problem}%
 \ifthenelse{\equal{##1}{}}{}{%
-  \HCode{<span class="theorem-like-title">}##1\HCode{</span>}%
+  \HCode{<span class="theorem-like problem-environment">}##1\HCode{</span>}%
 }}{}
-\ConfigureEnv{#1}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div class="theorem-like problem-environment #1" id="problem\arabic{identification}" titletext=" \GetTranslation{#1}">}}{\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\IgnoreIndent}{}{}%
+\ConfigureEnv{#1}
+  {\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP
+   \HCode{<div class="theorem-like problem-environment" id="problem\arabic{identification}"><section>\Hnewline<h\xmheadlevel>}\GetTranslation{#1}\HCode{</h\xmheadlevel>}%
+   \stepcounter{xmHeadOffset}}
+  {\addtocounter{xmHeadOffset}{-1}%
+   \ifvmode\IgnorePar\fi\EndP\HCode{</section></div>}\IgnoreIndent}
+  {}{}%
 }
 
 
@@ -185,20 +202,40 @@
    {\end:itm \global\def\end:itm{\EndP\Tg</dd>}\HCode{<dt
         class="actor">}\bgroup \bf}
    {\egroup\EndP\HCode{</dt><dd\Hnewline class="speech">}}
-\renewenvironment{foldable}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div id="foldable\arabic{identification}" class="foldable">}}{\HCode{</div>}\IgnoreIndent}
+\newif\ifxm@in@foldable
+\newif\ifxm@foldable@fresh
+\renewenvironment{foldable}{%
+  \stepcounter{identification}%
+  \ifvmode \IgnorePar\fi \EndP%
+  \HCode{<details open="open" id="foldable\arabic{identification}" class="foldable-details">\Hnewline}%
+  \xm@in@foldabletrue
+  \global\xm@foldable@freshtrue
+}{%
+  \global\xm@foldable@freshfalse
+  \ifvmode\IgnorePar\fi\EndP\HCode{</details>}\IgnoreIndent
+}
 
 \ifdefined\xmNotExpandableAsAccordion
 \renewenvironment{expandable}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div data-original="expandable" id="foldable\arabic{identification}" class="foldable">}}{\HCode{</div>}\IgnoreIndent}
 \fi
 
-\renewcommand{\unfoldable}[1]{\HCode{<span class="unfoldable">}#1\HCode{</span>}}
+\renewcommand{\unfoldable}[1]{%
+  \ifxm@in@foldable
+    \ifxm@foldable@fresh
+      \global\xm@foldable@freshfalse
+      \ifvmode \IgnorePar\fi \EndP%
+      \HCode{<summary class="unfoldable">}#1\HCode{</summary>\Hnewline}%
+    \else
+      \PackageWarning{ximera}{Only the first \string\unfoldable\space at the start of a foldable stays visible when folded (it becomes the summary); this one will fold away with the rest of the content}%
+      \HCode{<span class="unfoldable">}#1\HCode{</span>}%
+    \fi
+  \else
+    \HCode{<span class="unfoldable">}#1\HCode{</span>}%
+  \fi}
 %% \renewcommand{\youtube}[1]{\ifvmode \IgnorePar\fi \EndP\HCode{<div class="video youtube-player" data-youtube="#1">_</div>}}
 \renewcommand{\youtube}[1]{\ifvmode \IgnorePar\fi \EndP\HCode{<iframe class="xmyoutube" src="https://www.youtube-nocookie.com/embed/#1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>}}
 
 \renewcommand{\xkcd}[1]{\ifvmode \IgnorePar\fi \EndP\HCode{<img src="https://imgs.xkcd.com/comics/#1.png">}}
-
-
-\newcommand{\xmalt}[1]{\ifvmode \IgnorePar\fi \EndP   \HCode{<details><summary> Show Alt Text</summary>} #1 \HCode{</details>}  }
 
 
 \AtBeginDocument{\renewcommand{\ref}[1]{\HCode{<a class="reference" href="\##1">#1</a>}}}
@@ -244,7 +281,7 @@
 
 
 \renewenvironment{freeResponse}{\refstepcounter{problem}}{}%
-\ConfigureEnv{freeResponse}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div class="free-response" id="problem\arabic{identification}"  titletext=" \GetTranslation{Free Response}">}}{\HCode{</div>}\IgnoreIndent}{}{}%
+\ConfigureEnv{freeResponse}{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<div class="free-response" id="problem\arabic{identification}"  titletext=" \GetTranslation{Free Response}">}}{\EndP\HCode{</div>}\IgnoreIndent}{}{}%
 
 
 
@@ -317,17 +354,15 @@
 \colorlet{fncolor}{red!30!blue}% This is the footnote text coloring. This will allow users to renew this coloring to their own preference if they want to. The default here is a blue coloring. NOTE: Currently; trying to use `footnotecolor' (as a more descriptive color name) breaks everything on my system pretty spectacularly for some reason. This may be just mine or a clash somewhere in the ximera package, so for now I'm leaving it as `fncolor'.
 \renewcommand{\footnote}[1]{\ifvmode\ShowPar\fi
     \stepcounter{footnoteNum}% Step the counter to make a new footnote
-    %% The following HCode should setup the javascript function that shows or hides the footnote. If you want to change the footnote location, you may want to change the 'inline' part of x.style.display = 'inline'; to another CSS display type, like 'block' or 'inherit'. Current the `x.display.color' seems to not be working.
+    %% The following HCode should setup the javascript function that shows or hides the footnote. If you want to change the footnote location, you may want to change the 'inline' part of x.style.display = 'inline'; to another CSS display type, like 'block' or 'inherit'.
+    %% The button element is passed in so its aria-expanded state stays in sync with the visibility of the footnote text; screen readers rely on aria-expanded to announce the toggle state. Text coloring is left to \textcolor{fncolor} so that color is author-configurable and the parentheses remain a non-color cue.
     \HCode{
     <script type="text/javascript">
-            function footnotefun(ID) {
+            function footnotefun(btn, ID) {
               var x = document.getElementById(ID);
-              if (x.style.display === "none") {
-                x.style.color = "blue";
-                x.style.display = "inline";
-              } else {
-                x.style.display = "none";
-              }
+              var expanded = btn.getAttribute("aria-expanded") === "true";
+              btn.setAttribute("aria-expanded", expanded ? "false" : "true");
+              x.style.display = expanded ? "none" : "inline";
             }}
     \HCode{</script>}
     %% The next command needs \expandafter in order to expand the counter footnoteNum into a roman character for the footnote ID. These seem to work better than arabic numerals in some cases, although why is not clear.
@@ -335,12 +370,16 @@
     \expandafter\HCode{
     <span style="position=relative;
             vertical-align=baseline;">
-            <button onclick='footnotefun("footnote\roman{footnoteNum}")'
+            <button onclick='footnotefun(this, "footnote\roman{footnoteNum}")'
+                aria-expanded="false"
+                aria-controls="footnote\roman{footnoteNum}"
+                aria-label="\GetTranslation{Footnote} \arabic{footnoteNum}"
                 style=
                 "background:none!important;
                  color:inherit;
                  border:none;
-                 padding:0!important;
+                 padding:0.25em!important;
+                 margin:-0.25em;
                  font: inherit;
                  cursor: pointer;"
                 >
@@ -356,7 +395,6 @@
                 position:relative;
                 left:2px;
                 padding:5px;
-                color:blue;
                 word-wrap:break-word;
                 z-index=9999;
                 overflow=auto;"
@@ -369,12 +407,12 @@
 \renewenvironment{accordion}{\ifvmode \IgnorePar\fi \EndP\HCode{<div class="accordion">}
 }{\HCode{</div>}\IgnoreIndent}
 
-\renewenvironment{accordion-item}[1][]{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<h3>}#1\HCode{</h3><div id="accordion-item\arabic{identification}" class="accordion-item">}
-}{\HCode{</div>}\IgnoreIndent}
+\renewenvironment{accordion-item}[1][]{\stepcounter{identification}\ifvmode \IgnorePar\fi \EndP\HCode{<h\xmheadlevel\space class="accordion-header">}\if\relax\detokenize{#1}\relax\xmSrOnly{\GetTranslation{expandable}}\else#1\fi\HCode{</h\xmheadlevel><div id="accordion-item\arabic{identification}" class="accordion-item">}\stepcounter{xmHeadOffset}
+}{\addtocounter{xmHeadOffset}{-1}\HCode{</div>}\IgnoreIndent}
 
 \ifdefined\xmNotHintAsExpandable\else
 \RenewEnviron{hint}{%
- \begin{expandable}{xmhint}{}%
+ \begin{expandable}{xmhint}{\xmSrOnly{\GetTranslation{hint}}}%
    \BODY%
  \end{expandable}%
 }
@@ -388,10 +426,14 @@
   \stepcounter{identification}%
   \ifvmode \IgnorePar\fi \EndP%
   \HCode{<div class="accordion">\Hnewline}%
-  \HCode{<h3 class="#1">}#2\HCode{</h3>\Hnewline}%
-  \HCode{<div id="accordion-item\arabic{identification}" class="accordion-item #1-content">\Hnewline}
+  \HCode{<h\xmheadlevel\space class="accordion-header #1">}%
+  \if\relax\detokenize{#2}\relax\xmSrOnly{\GetTranslation{expandable}}\else#2\fi
+  \HCode{</h\xmheadlevel>\Hnewline}%
+  \HCode{<div id="accordion-item\arabic{identification}" class="accordion-item #1-content">\Hnewline}%
+  \stepcounter{xmHeadOffset}%
 }%
 {%
+  \addtocounter{xmHeadOffset}{-1}%
   \HCode{</div>\Hnewline</div>\Hnewline}\IgnoreIndent
 }
 \fi
