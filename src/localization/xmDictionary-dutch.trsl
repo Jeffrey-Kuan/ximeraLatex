@@ -58,4 +58,4 @@
 
 \addtranslation{Dutch}{Footnote}{Voetnoot}% Used in footnotes.dtx (aria-label)
 
-\addtranslation{Dutch}{expandable}{Details}% Fallback title for untitled expandables/accordion-items (accordion.dtx)
+\addtranslation{Dutch}{expandable}{Dit is een uitklapbaar element}% Visible default text for untitled expandables/accordion-items (accordion.dtx)

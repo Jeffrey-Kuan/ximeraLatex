@@ -56,4 +56,4 @@
 \addtranslation{Brazil}{Solution}{Solução}% Used in solution.dtx
 \addtranslation{Brazil}{Footnote}{Nota de rodapé}% Used in footnotes.dtx (aria-label)
 
-\addtranslation{Brazil}{expandable}{Detalhes}% Fallback title for untitled expandables/accordion-items (accordion.dtx)
+\addtranslation{Brazil}{expandable}{Isto é um elemento expansível}% Visible default text for untitled expandables/accordion-items (accordion.dtx)

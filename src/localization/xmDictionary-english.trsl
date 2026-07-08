@@ -58,4 +58,4 @@
 
 \addtranslation{English}{Footnote}{Footnote}% Used in footnotes.dtx (aria-label)
 
-\addtranslation{English}{expandable}{Details}% Fallback title for untitled expandables/accordion-items (accordion.dtx)
+\addtranslation{English}{expandable}{This is an expandable}% Visible default text for untitled expandables/accordion-items (accordion.dtx)
