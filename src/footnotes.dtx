@@ -7,17 +7,15 @@
 \colorlet{fncolor}{red!30!blue}% This is the footnote text coloring. This will allow users to renew this coloring to their own preference if they want to. The default here is a blue coloring. NOTE: Currently; trying to use `footnotecolor' (as a more descriptive color name) breaks everything on my system pretty spectacularly for some reason. This may be just mine or a clash somewhere in the ximera package, so for now I'm leaving it as `fncolor'.
 \renewcommand{\footnote}[1]{\ifvmode\ShowPar\fi
     \stepcounter{footnoteNum}% Step the counter to make a new footnote
-    %% The following HCode should setup the javascript function that shows or hides the footnote. If you want to change the footnote location, you may want to change the 'inline' part of x.style.display = 'inline'; to another CSS display type, like 'block' or 'inherit'. Current the `x.display.color' seems to not be working.
+    %% The following HCode should setup the javascript function that shows or hides the footnote. If you want to change the footnote location, you may want to change the 'inline' part of x.style.display = 'inline'; to another CSS display type, like 'block' or 'inherit'.
+    %% The button element is passed in so its aria-expanded state stays in sync with the visibility of the footnote text; screen readers rely on aria-expanded to announce the toggle state. Text coloring is left to \textcolor{fncolor} so that color is author-configurable and the parentheses remain a non-color cue.
     \HCode{
     <script type="text/javascript">
-            function footnotefun(ID) {
+            function footnotefun(btn, ID) {
               var x = document.getElementById(ID);
-              if (x.style.display === "none") {
-                x.style.color = "blue";
-                x.style.display = "inline";
-              } else {
-                x.style.display = "none";
-              }
+              var expanded = btn.getAttribute("aria-expanded") === "true";
+              btn.setAttribute("aria-expanded", expanded ? "false" : "true");
+              x.style.display = expanded ? "none" : "inline";
             }}
     \HCode{</script>}
     %% The next command needs \expandafter in order to expand the counter footnoteNum into a roman character for the footnote ID. These seem to work better than arabic numerals in some cases, although why is not clear.
@@ -25,12 +23,16 @@
     \expandafter\HCode{
     <span style="position=relative;
             vertical-align=baseline;">
-            <button onclick='footnotefun("footnote\roman{footnoteNum}")'
+            <button onclick='footnotefun(this, "footnote\roman{footnoteNum}")'
+                aria-expanded="false"
+                aria-controls="footnote\roman{footnoteNum}"
+                aria-label="\GetTranslation{Footnote} \arabic{footnoteNum}"
                 style=
                 "background:none!important;
                  color:inherit;
                  border:none;
-                 padding:0!important;
+                 padding:0.25em!important;
+                 margin:-0.25em;
                  font: inherit;
                  cursor: pointer;"
                 >
@@ -46,7 +48,6 @@
                 position:relative;
                 left:2px;
                 padding:5px;
-                color:blue;
                 word-wrap:break-word;
                 z-index=9999;
                 overflow=auto;"
